@@ -179,7 +179,7 @@ class P2C(nn.Module):
 
         total_loss = shape_recon_loss + shape_matching_loss + latent_recon_loss #+ manifold_penalty
 
-        return total_loss, shape_recon_loss, shape_matching_loss, latent_recon_loss#, manifold_penalty
+        return total_loss, shape_recon_loss, shape_matching_loss, latent_recon_loss, 0# manifold_penalty
 
 
     def forward(self, partial, n_points=None, record=False):
