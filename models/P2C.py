@@ -6,7 +6,7 @@ from models.build import MODELS
 from models.transformer import Group
 from extensions.chamfer_dist import ChamferDistanceL1
 from extensions.pointops.functions import pointops
-from pytorch3d.ops.points_normals import estimate_pointcloud_normals
+#from pytorch3d.ops.points_normals import estimate_pointcloud_normals
 from timm.models.layers import trunc_normal_
 from utils.logger import *
 
@@ -65,28 +65,28 @@ class Decoder(nn.Module):
         return pcd
 
 
-class ManifoldnessConstraint(nn.Module):
-    """
-    The Normal Consistency Constraint
-    """
-    def __init__(self, support=8, neighborhood_size=32):
-        super().__init__()
-        self.cos = nn.CosineSimilarity(dim=3, eps=1e-6)
-        self.support = support
-        self.neighborhood_size = neighborhood_size
+# class ManifoldnessConstraint(nn.Module):
+#     """
+#     The Normal Consistency Constraint
+#     """
+#     def __init__(self, support=8, neighborhood_size=32):
+#         super().__init__()
+#         self.cos = nn.CosineSimilarity(dim=3, eps=1e-6)
+#         self.support = support
+#         self.neighborhood_size = neighborhood_size
 
-    def forward(self, xyz):
+#     def forward(self, xyz):
 
-        normals = estimate_pointcloud_normals(xyz, neighborhood_size=self.neighborhood_size)
+#         normals = estimate_pointcloud_normals(xyz, neighborhood_size=self.neighborhood_size)
 
-        idx = pointops.knn(xyz, xyz, self.support)[0]
-        neighborhood = pointops.index_points(normals, idx)
+#         idx = pointops.knn(xyz, xyz, self.support)[0]
+#         neighborhood = pointops.index_points(normals, idx)
 
-        cos_similarity = self.cos(neighborhood[:, :, 0, :].unsqueeze(2), neighborhood)
-        penalty = 1 - cos_similarity
-        penalty = penalty.std(-1)
-        penalty = penalty.mean(-1)
-        return penalty
+#         cos_similarity = self.cos(neighborhood[:, :, 0, :].unsqueeze(2), neighborhood)
+#         penalty = 1 - cos_similarity
+#         penalty = penalty.std(-1)
+#         penalty = penalty.mean(-1)
+#         return penalty
 
 
 @MODELS.register_module()
@@ -128,7 +128,7 @@ class P2C(nn.Module):
         # define loss functions
         self.shape_criterion = ChamferDistanceL1()
         self.latent_criterion = nn.SmoothL1Loss(reduction='mean')
-        self.manifold_constraint = ManifoldnessConstraint(support=config.support, neighborhood_size=config.neighborhood_size)
+        #self.manifold_constraint = ManifoldnessConstraint(support=config.support, neighborhood_size=config.neighborhood_size)
         self.shape_matching_weight = config.shape_matching_weight
         self.shape_recon_weight = config.shape_recon_weight
         self.latent_weight = config.latent_weight
@@ -175,11 +175,11 @@ class P2C(nn.Module):
         feat_recon = self.encoder(nbrs_pred.view(B, -1, 3).detach())
         latent_recon_loss = self.latent_weight * self.latent_criterion(feat, feat_recon)
         # normal consistency constraint
-        manifold_penalty = self.manifold_weight * self.manifold_constraint(pred).mean()
+        #manifold_penalty = self.manifold_weight * self.manifold_constraint(pred).mean()
 
-        total_loss = shape_recon_loss + shape_matching_loss + latent_recon_loss + manifold_penalty
+        total_loss = shape_recon_loss + shape_matching_loss + latent_recon_loss #+ manifold_penalty
 
-        return total_loss, shape_recon_loss, shape_matching_loss, latent_recon_loss, manifold_penalty
+        return total_loss, shape_recon_loss, shape_matching_loss, latent_recon_loss#, manifold_penalty
 
 
     def forward(self, partial, n_points=None, record=False):
